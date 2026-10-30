@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" package="dev.blaze.launcher" platformBuildVersionCode="35" platformBuildVersionName="15">
+<?xml version="1.0" encoding="utf-8" standalone="no"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" android:compileSdkVersion="35" android:compileSdkVersionCodename="15" package="dev.blaze.launcher" platformBuildVersionCode="35" platformBuildVersionName="15">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -75,7 +74,7 @@
         <activity android:alwaysRetainTaskState="true" android:configChanges="keyboardHidden|orientation|uiMode|screenSize" android:exported="true" android:launchMode="singleTask" android:name="com.microsoft.xal.browser.IntentHandler">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
-                <data android:host="auth" android:scheme="@string/xal_token"/>
+                <data android:host="auth" android:scheme="ms-xal-0000000048183522"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
