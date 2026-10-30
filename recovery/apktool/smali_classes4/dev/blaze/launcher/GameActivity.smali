@@ -71,6 +71,31 @@
     return-void
 .end method
 
+.method private final logStartupStage(Ljava/lang/String;)V
+    .locals 4
+
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v0
+
+    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v3, "[elapsedMs="
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
+    invoke-virtual {v2, v0, v1}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    move-result-object v2
+    const-string v3, "] "
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
+    invoke-virtual {v2, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object p1
+    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p1
+    const-string v0, "BlazeLauncherStartup"
+    invoke-static {v0, p1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    return-void
+.end method
+
 .method private final fromHtml(Ljava/lang/String;)Landroid/text/Spanned;
     .locals 1
 
@@ -367,19 +392,19 @@
 .method public onCreate(Landroid/os/Bundle;)V
     .locals 5
 
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE GameActivity.onCreate ENTER"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE GameActivity.onCreate ENTER"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
 
     :try_start_0
     invoke-super {p0, p1}, Ldev/blaze/launcher/AdActivity;->onCreate(Landroid/os/Bundle;)V
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE inherited MainActivity/GameActivity super.onCreate COMPLETE"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE inherited MainActivity/GameActivity super.onCreate COMPLETE"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catch_super
 
     invoke-direct {p0}, Ldev/blaze/launcher/GameActivity;->showAgreeDialog()V
+    const-string v0, "STAGE privacy dialog initialization COMPLETE"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     invoke-static {p0}, Landroid/preference/PreferenceManager;->getDefaultSharedPreferences(Landroid/content/Context;)Landroid/content/SharedPreferences;
     move-result-object p1
     const-string v0, "blaze_native_overlay_disabled"
@@ -387,28 +412,24 @@
     invoke-interface {p1, v0, v1}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
     move-result p1
     if-eqz p1, :native_enabled
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE DIAGNOSTIC native overlay disabled"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE DIAGNOSTIC native overlay disabled; Minecraft-only startup mode"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     return-void
 
     :native_enabled
     :try_start_1
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE System.loadLibrary(blaze) ENTER"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE System.loadLibrary(blaze) ENTER"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     const-string v1, "blaze"
     invoke-static {v1}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE System.loadLibrary(blaze) COMPLETE"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE System.loadLibrary(blaze) COMPLETE"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     move-object v1, p0
     check-cast v1, Landroid/content/Context;
     invoke-static {v1}, Ldev/blaze/launcher/Start;->_Start(Landroid/content/Context;)V
     invoke-static {p0}, Ldev/blaze/launcher/Start;->__Start(Landroid/app/Activity;)V
-    const-string v0, "BlazeLauncherStartup"
-    const-string v1, "STAGE Start._Start and Start.__Start COMPLETE"
-    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v0, "STAGE Start._Start and Start.__Start SCHEDULED"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catch_native
     return-void
@@ -418,6 +439,19 @@
     const-string v0, "BlazeLauncherStartup"
     invoke-static {p1}, Landroid/util/Log;->getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;
     move-result-object v1
+    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v3
+    invoke-virtual {v2, v3, v4}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    move-result-object v2
+    const-string v3, "ms] inherited super.onCreate FAILED\n"
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v1
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v1
     invoke-static {v0, v1, p1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
     return-void
 
@@ -425,6 +459,19 @@
     move-exception p1
     const-string v0, "BlazeLauncherStartup"
     invoke-static {p1}, Landroid/util/Log;->getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;
+    move-result-object v1
+    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v3
+    invoke-virtual {v2, v3, v4}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    move-result-object v2
+    const-string v3, "ms] native startup FAILED\n"
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v1
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
     move-result-object v1
     invoke-static {v0, v1, p1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
     return-void

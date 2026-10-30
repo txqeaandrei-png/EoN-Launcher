@@ -36,6 +36,10 @@
     .locals 4
 
     .line 84
+    const-string v0, "[BlazeLauncherStartup]"
+    const-string v1, "STAGE overlay Start.Start ENTER"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
     move-object v0, p0
 
     check-cast v0, Landroid/app/Activity;
@@ -79,6 +83,9 @@
     sput-object v1, Ldev/blaze/launcher/Start;->display:Ldev/blaze/launcher/GLES3JNIView;
 
     .line 89
+    const-string v1, "STAGE GLES3JNIView initialization COMPLETE"
+    const-string v2, "[BlazeLauncherStartup]"
+    invoke-static {v2, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
     const-string v1, "after GLES3JNIView(context)"
 
     invoke-static {v2, v1}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
@@ -150,6 +157,10 @@
     .locals 4
 
     .line 54
+    const-string v0, "[BlazeLauncherStartup]"
+    const-string v1, "STAGE Start._Start ENTER delayed GLES overlay scheduling"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
     new-instance v0, Landroid/os/Handler;
 
     invoke-direct {v0}, Landroid/os/Handler;-><init>()V
@@ -169,6 +180,10 @@
     .locals 3
 
     .line 67
+    const-string v0, "[BlazeLauncherStartup]"
+    const-string v1, "STAGE Start.__Start ENTER delayed native callback scheduling"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
     sput-object p0, Ldev/blaze/launcher/Start;->activity:Landroid/app/Activity;
 
     .line 69
