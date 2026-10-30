@@ -1,0 +1,12 @@
+package com.google.android.gms.libs.identity;
+
+import com.google.android.gms.common.api.internal.ListenerHolder;
+
+/* JADX INFO: loaded from: classes.dex */
+public interface zzdr {
+    ListenerHolder zza();
+
+    void zzb(ListenerHolder listenerHolder);
+
+    void zzc();
+}

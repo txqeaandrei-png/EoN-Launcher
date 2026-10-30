@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:background="#ff303030" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <androidx.constraintlayout.widget.ConstraintLayout android:background="#3b3b3b" android:layout_width="509.0dp" android:layout_height="340.0dp">
+        <LinearLayout android:orientation="vertical" android:layout_width="507.0dp" android:layout_height="338.0dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <TextView android:textSize="26.0sp" android:typeface="normal" android:textColor="#ffffff" android:id="@id/title" android:layout_width="172.0dp" android:layout_height="68.0dp" android:text="Blaze\nLauncher" />
+    <TextView android:textSize="20.0sp" android:textColor="#ffffff" android:id="@id/subTitle" android:layout_width="195.0dp" android:layout_height="31.0dp" android:text="BlazeLauncher 1.0.0" />
+    <ListView android:layout_width="177.0dp" android:layout_height="330.0dp" />
+</androidx.constraintlayout.widget.ConstraintLayout>

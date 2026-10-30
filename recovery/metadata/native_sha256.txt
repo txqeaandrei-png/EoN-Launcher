@@ -1,0 +1,3 @@
+726495087e721df6ffcbc2d3c36a486141e553732d2e6f5b36dfe0a610421c38  recovery/native/arm64-v8a/libblaze.so
+28e7a3a306d7fc222c62abe08741cfcba38c3f336216c4563726bf985ae3cfd6  recovery/native/arm64-v8a/libc++_shared.so
+b68587eb0add627c11ac4856a766be894a0c00e39037a3f9a6ce6dbd9ec85994  recovery/native/arm64-v8a/libgojni.so

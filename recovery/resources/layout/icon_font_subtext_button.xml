@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/icon_font_subtext_btn_icon_bg" android:layout_width="@dimen/friendFinderIconButtonHeight" android:layout_height="@dimen/friendFinderIconButtonHeight">
+        <com.microsoft.xbox.toolkit.ui.CustomTypefaceTextView android:gravity="center" android:id="@id/icon_font_subtext_icon" android:layout_width="@dimen/friendFinderIconButtonWidth" android:layout_height="@dimen/friendFinderIconButtonHeight" />
+    </FrameLayout>
+    <androidx.appcompat.widget.LinearLayoutCompat android:orientation="vertical" android:layout_width="match_parent" android:layout_height="@dimen/friendFinderIconButtonHeight" android:layout_marginTop="2.0dp" android:layout_marginStart="@dimen/friendFinderPageMargin">
+        <com.microsoft.xbox.toolkit.ui.CustomTypefaceTextView android:textSize="18.0sp" android:id="@id/icon_font_subtext_btn_title" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <com.microsoft.xbox.toolkit.ui.CustomTypefaceTextView android:textSize="15.0sp" android:id="@id/icon_font_subtext_btn_subtitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" />
+    </androidx.appcompat.widget.LinearLayoutCompat>
+</merge>
