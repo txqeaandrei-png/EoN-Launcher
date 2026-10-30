@@ -1149,6 +1149,48 @@
     goto :goto_0
 .end method
 
+.method private final patchNativeLibraryDirCompatibility()V
+    .locals 5
+
+    invoke-direct {p0}, Ldev/blaze/launcher/App;->patchNativeLibraryDir()V
+
+    :try_start_0
+    invoke-virtual {p0}, Landroid/content/ContextWrapper;->getClassLoader()Ljava/lang/ClassLoader;
+    move-result-object v0
+    const-string v1, "com.mojang.minecraftpe"
+    const/4 v2, 0x2
+    invoke-virtual {p0, v1, v2}, Landroid/content/ContextWrapper;->createPackageContext(Ljava/lang/String;I)Landroid/content/Context;
+    move-result-object v1
+    invoke-virtual {v1}, Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;
+    move-result-object v1
+    new-instance v2, Ljava/io/File;
+    iget-object v3, v1, Landroid/content/pm/ApplicationInfo;->nativeLibraryDir:Ljava/lang/String;
+    invoke-direct {v2, v3}, Ljava/io/File;-><init>(Ljava/lang/String;)V
+    invoke-static {v0, v2}, Ldev/blaze/launcher/Patcher;->patchNativeLibraryDir(Ljava/lang/ClassLoader;Ljava/io/File;)V
+    const-string v3, "BlazeLauncherStartup"
+    new-instance v4, Ljava/lang/StringBuilder;
+    invoke-direct {v4}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v0, "STAGE target Minecraft nativeLibraryDir ADDED "
+    invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v4
+    invoke-virtual {v4, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+    move-result-object v4
+    invoke-virtual {v4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v4
+    invoke-static {v3, v4}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catch_target
+    return-void
+
+    :catch_target
+    move-exception v0
+    const-string v1, "BlazeLauncherStartup"
+    invoke-static {v0}, Landroid/util/Log;->getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;
+    move-result-object v2
+    invoke-static {v1, v2, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+    return-void
+.end method
+
 .method public static ۟۠ۧۨ۠(Ljava/lang/Object;)V
     .locals 1
 
@@ -1160,7 +1202,7 @@
 
     check-cast p0, Ldev/blaze/launcher/App;
 
-    invoke-direct {p0}, Ldev/blaze/launcher/App;->patchNativeLibraryDir()V
+    invoke-direct {p0}, Ldev/blaze/launcher/App;->patchNativeLibraryDirCompatibility()V
 
     :goto_0
     return-void

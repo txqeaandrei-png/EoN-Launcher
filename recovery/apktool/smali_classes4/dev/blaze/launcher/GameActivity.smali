@@ -365,40 +365,68 @@
 .end method
 
 .method public onCreate(Landroid/os/Bundle;)V
-    .locals 1
+    .locals 5
 
-    .line 24
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE GameActivity.onCreate ENTER"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
+    :try_start_0
     invoke-super {p0, p1}, Ldev/blaze/launcher/AdActivity;->onCreate(Landroid/os/Bundle;)V
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE inherited MainActivity/GameActivity super.onCreate COMPLETE"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catch_super
 
-    .line 25
     invoke-direct {p0}, Ldev/blaze/launcher/GameActivity;->showAgreeDialog()V
+    invoke-static {p0}, Landroid/preference/PreferenceManager;->getDefaultSharedPreferences(Landroid/content/Context;)Landroid/content/SharedPreferences;
+    move-result-object p1
+    const-string v0, "blaze_native_overlay_disabled"
+    const/4 v1, 0x1
+    invoke-interface {p1, v0, v1}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+    move-result p1
+    if-eqz p1, :native_enabled
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE DIAGNOSTIC native overlay disabled"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    return-void
 
-    .line 29
-    const-string p1, "blaze"
+    :native_enabled
+    :try_start_1
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE System.loadLibrary(blaze) ENTER"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    const-string v1, "blaze"
+    invoke-static {v1}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE System.loadLibrary(blaze) COMPLETE"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    move-object v1, p0
+    check-cast v1, Landroid/content/Context;
+    invoke-static {v1}, Ldev/blaze/launcher/Start;->_Start(Landroid/content/Context;)V
+    invoke-static {p0}, Ldev/blaze/launcher/Start;->__Start(Landroid/app/Activity;)V
+    const-string v0, "BlazeLauncherStartup"
+    const-string v1, "STAGE Start._Start and Start.__Start COMPLETE"
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    :try_end_1
+    .catchall {:try_start_1 .. :try_end_1} :catch_native
+    return-void
 
-    invoke-static {p1}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+    :catch_super
+    move-exception p1
+    const-string v0, "BlazeLauncherStartup"
+    invoke-static {p1}, Landroid/util/Log;->getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;
+    move-result-object v1
+    invoke-static {v0, v1, p1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+    return-void
 
-    .line 31
-    move-object p1, p0
-
-    check-cast p1, Landroid/content/Context;
-
-    invoke-static {p1}, Ldev/blaze/launcher/Start;->_Start(Landroid/content/Context;)V
-
-    .line 32
-    move-object p1, p0
-
-    check-cast p1, Landroid/app/Activity;
-
-    invoke-static {p1}, Ldev/blaze/launcher/Start;->__Start(Landroid/app/Activity;)V
-
-    .line 33
-    const-string p1, "BlazeLauncherNative"
-
-    const-string v0, "Load blaze (Java Message)"
-
-    invoke-static {p1, v0}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
-
+    :catch_native
+    move-exception p1
+    const-string v0, "BlazeLauncherStartup"
+    invoke-static {p1}, Landroid/util/Log;->getStackTraceString(Ljava/lang/Throwable;)Ljava/lang/String;
+    move-result-object v1
+    invoke-static {v0, v1, p1}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
     return-void
 .end method
 
