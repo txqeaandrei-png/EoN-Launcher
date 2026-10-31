@@ -7,11 +7,14 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.eon.launcher.gui.ClickGuiView;
 
 public class MainActivity extends AppCompatActivity {
     private static final String GAME_PACKAGE = "com.mojang.minecraftpe";
@@ -21,8 +24,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int COLOR_MUTED = Color.rgb(155, 171, 164);
     private static final int COLOR_ACCENT = Color.rgb(127, 224, 179);
 
+    private FrameLayout contentHost;
     private LinearLayout pageContent;
     private boolean showingControlPanel;
+    private boolean showingClickGui;
 
     static {
         System.loadLibrary("eoncore");
@@ -49,21 +54,23 @@ public class MainActivity extends AppCompatActivity {
         header.addView(headerLabel);
         shell.addView(header, new LinearLayout.LayoutParams(-1, dp(64)));
 
-        ScrollView scrollView = new ScrollView(this);
-        pageContent = new LinearLayout(this);
-        pageContent.setOrientation(LinearLayout.VERTICAL);
-        pageContent.setPadding(dp(24), dp(20), dp(24), dp(28));
-        scrollView.addView(pageContent);
-        shell.addView(scrollView, new LinearLayout.LayoutParams(-1, 0, 1));
+        contentHost = new FrameLayout(this);
+        shell.addView(contentHost, new LinearLayout.LayoutParams(-1, 0, 1));
 
         LinearLayout navigation = new LinearLayout(this);
         navigation.setPadding(dp(16), dp(8), dp(16), dp(12));
         navigation.setOrientation(LinearLayout.HORIZONTAL);
-        TextView homeTab = navButton("LAUNCHER");
-        TextView panelTab = navButton("CONTROL PANEL");
+        TextView homeTab = navButton("HOME");
+        TextView guiTab = navButton("CLICKGUI");
+        TextView panelTab = navButton("STATUS");
         homeTab.setOnClickListener(view -> showHome());
+        guiTab.setOnClickListener(view -> showClickGui());
         panelTab.setOnClickListener(view -> showControlPanel());
-        navigation.addView(homeTab, new LinearLayout.LayoutParams(0, dp(48), 1));
+        LinearLayout.LayoutParams navParams = new LinearLayout.LayoutParams(0, dp(48), 1);
+        navigation.addView(homeTab, navParams);
+        LinearLayout.LayoutParams guiParams = new LinearLayout.LayoutParams(0, dp(48), 1);
+        guiParams.setMargins(dp(8), 0, dp(8), 0);
+        navigation.addView(guiTab, guiParams);
         navigation.addView(panelTab, new LinearLayout.LayoutParams(0, dp(48), 1));
         shell.addView(navigation);
 
@@ -74,13 +81,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (pageContent != null && !showingControlPanel) {
+        if (pageContent != null && !showingControlPanel && !showingClickGui) {
             showHome();
         }
     }
 
     private void showHome() {
         showingControlPanel = false;
+        showingClickGui = false;
+        beginScrollablePage();
         pageContent.removeAllViews();
         addLabel("GAME");
         addTitle("Minecraft");
@@ -120,6 +129,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void showControlPanel() {
         showingControlPanel = true;
+        showingClickGui = false;
+        beginScrollablePage();
         pageContent.removeAllViews();
         addLabel("DIAGNOSTICS");
         addTitle("Control panel");
@@ -128,6 +139,25 @@ public class MainActivity extends AppCompatActivity {
         addStatusRow("Minecraft process", "No in-game connection", "NOT CONNECTED", COLOR_MUTED);
         addStatusRow("Rendering API", "No authorized integration configured", "UNAVAILABLE", COLOR_MUTED);
         addStatusRow("Input API", "No authorized integration configured", "UNAVAILABLE", COLOR_MUTED);
+    }
+
+    private void showClickGui() {
+        showingControlPanel = false;
+        showingClickGui = true;
+        pageContent = null;
+        contentHost.removeAllViews();
+        contentHost.addView(new ClickGuiView(this), new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    private void beginScrollablePage() {
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setFillViewport(true);
+        pageContent = new LinearLayout(this);
+        pageContent.setOrientation(LinearLayout.VERTICAL);
+        pageContent.setPadding(dp(24), dp(20), dp(24), dp(28));
+        scrollView.addView(pageContent);
+        contentHost.removeAllViews();
+        contentHost.addView(scrollView, new FrameLayout.LayoutParams(-1, -1));
     }
 
     private void launchMinecraft() {
