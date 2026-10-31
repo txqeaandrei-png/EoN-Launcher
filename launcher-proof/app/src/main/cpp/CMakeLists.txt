@@ -6,6 +6,10 @@ add_library(
     eon_runtime
     STATIC
     runtime/runtime.cpp
+    runtime/native_renderer.cpp
+    runtime/native_input.cpp
+    runtime/gui_bridge.cpp
+    runtime/runtime_diagnostics.cpp
 )
 
 target_include_directories(
@@ -18,6 +22,7 @@ add_library(
     eoncore
     SHARED
     native-lib.cpp
+    jni_bridge.cpp
 )
 
 find_library(
@@ -25,9 +30,15 @@ find_library(
     log
 )
 
+find_library(
+    gles-lib
+    GLESv2
+)
+
 target_link_libraries(
     eoncore
     PRIVATE
     eon_runtime
     ${log-lib}
+    ${gles-lib}
 )

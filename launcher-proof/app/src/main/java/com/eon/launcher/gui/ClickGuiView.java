@@ -9,8 +9,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -41,6 +41,15 @@ public final class ClickGuiView extends LinearLayout {
     private final EditText searchField;
     private ModuleCategory activeCategory = ModuleCategory.COMBAT;
     private String searchQuery = "";
+    private InteractionListener interactionListener;
+
+    public interface InteractionListener {
+        void onCategoryChanged(String category);
+        void onSearchChanged(String query);
+        void onModuleToggled(String moduleId, boolean enabled);
+        void onSettingChanged(String moduleId, String setting, String value);
+        void onTouchEvent(MotionEvent event, View source);
+    }
 
     public ClickGuiView(android.content.Context context) {
         super(context);
@@ -107,6 +116,9 @@ public final class ClickGuiView extends LinearLayout {
             @Override
             public void onTextChanged(CharSequence value, int start, int before, int count) {
                 searchQuery = value.toString().trim().toLowerCase(Locale.ROOT);
+                if (interactionListener != null) {
+                    interactionListener.onSearchChanged(searchQuery);
+                }
                 renderModules();
             }
 
@@ -117,6 +129,35 @@ public final class ClickGuiView extends LinearLayout {
 
         renderCategories();
         renderModules();
+    }
+
+    public void setInteractionListener(InteractionListener listener) {
+        interactionListener = listener;
+        syncPrototypeStateToListener();
+    }
+
+    private void syncPrototypeStateToListener() {
+        if (interactionListener == null) return;
+        interactionListener.onCategoryChanged(activeCategory.getLabel());
+        interactionListener.onSearchChanged(searchQuery);
+        for (ModuleDefinition module : ModuleCatalog.all()) {
+            interactionListener.onModuleToggled(module.getId(), configStore.isEnabled(module));
+            if (module.getSettingType() == ModuleDefinition.SettingType.RANGE) {
+                interactionListener.onSettingChanged(module.getId(), module.getSettingLabel(),
+                        String.valueOf(configStore.getRange(module)));
+            } else {
+                interactionListener.onSettingChanged(module.getId(), module.getSettingLabel(),
+                        configStore.getChoice(module));
+            }
+        }
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (interactionListener != null) {
+            interactionListener.onTouchEvent(event, this);
+        }
+        return super.dispatchTouchEvent(event);
     }
 
     private void renderCategories() {
@@ -130,6 +171,9 @@ public final class ClickGuiView extends LinearLayout {
             tab.setBackground(background(selected ? accentColor() : COLOR_SURFACE, 8));
             tab.setOnClickListener(view -> {
                 activeCategory = category;
+                if (interactionListener != null) {
+                    interactionListener.onCategoryChanged(category.getLabel());
+                }
                 renderCategories();
                 renderModules();
             });
@@ -202,6 +246,9 @@ public final class ClickGuiView extends LinearLayout {
             enabled.setOnCheckedChangeListener((button, checked) -> {
                 configStore.setEnabled(module, checked);
                 card.setStrokeColor(ColorStateList.valueOf(checked ? accentColor() : Color.rgb(43, 55, 57)));
+                if (interactionListener != null) {
+                    interactionListener.onModuleToggled(module.getId(), checked);
+                }
             });
             heading.addView(enabled);
         }
@@ -263,6 +310,10 @@ public final class ClickGuiView extends LinearLayout {
                     value.setText(String.valueOf(selected));
                     if (fromUser) {
                         configStore.setRange(module, selected);
+                        if (interactionListener != null) {
+                            interactionListener.onSettingChanged(module.getId(), module.getSettingLabel(),
+                                    String.valueOf(selected));
+                        }
                     }
                 }
 
@@ -296,6 +347,9 @@ public final class ClickGuiView extends LinearLayout {
                 }
                 configStore.setChoice(module, choices[nextIndex]);
                 choice.setText(choices[nextIndex]);
+                if (interactionListener != null) {
+                    interactionListener.onSettingChanged(module.getId(), module.getSettingLabel(), choices[nextIndex]);
+                }
                 if ("ui-accent".equals(module.getId())) {
                     renderCategories();
                     renderModules();
@@ -347,6 +401,7 @@ public final class ClickGuiView extends LinearLayout {
             return;
         }
         Toast.makeText(getContext(), "Prototype config loaded", Toast.LENGTH_SHORT).show();
+        syncPrototypeStateToListener();
         renderCategories();
         renderModules();
     }
@@ -358,6 +413,7 @@ public final class ClickGuiView extends LinearLayout {
                 .setNegativeButton("Cancel", null)
                 .setPositiveButton("Reset", (dialog, which) -> {
                     configStore.reset(ModuleCatalog.all());
+                    syncPrototypeStateToListener();
                     renderCategories();
                     renderModules();
                 })

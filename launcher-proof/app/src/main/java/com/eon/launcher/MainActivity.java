@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -15,6 +17,10 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.eon.launcher.gui.ClickGuiView;
+import com.eon.launcher.runtime.JNIBridge;
+import com.eon.launcher.runtime.NativeRendererView;
+import com.eon.launcher.runtime.NativeRuntime;
+import com.eon.launcher.runtime.RuntimeDiagnostics;
 
 public class MainActivity extends AppCompatActivity {
     private static final String GAME_PACKAGE = "com.mojang.minecraftpe";
@@ -28,17 +34,19 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout pageContent;
     private boolean showingControlPanel;
     private boolean showingClickGui;
-
-    static {
-        System.loadLibrary("eoncore");
-    }
+    private boolean activityResumed;
+    private final Handler diagnosticsHandler = new Handler(Looper.getMainLooper());
+    private final Runnable diagnosticsRefresh = this::refreshDiagnostics;
+    private NativeRuntime nativeRuntime;
+    private NativeRendererView nativeRendererView;
+    private LinearLayout diagnosticsRows;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!nativeInitialize()) {
-            throw new IllegalStateException("Eon native runtime failed to initialize");
-        }
+        nativeRuntime = new NativeRuntime();
+        nativeRuntime.initialize();
+        publishScreenMetrics();
         getWindow().setStatusBarColor(COLOR_BACKGROUND);
         getWindow().setNavigationBarColor(COLOR_BACKGROUND);
         getWindow().getDecorView().setSystemUiVisibility(0);
@@ -84,25 +92,44 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        nativeOnResume();
+        activityResumed = true;
+        publishScreenMetrics();
+        nativeRuntime.onResume();
+        if (nativeRendererView != null) nativeRendererView.onHostResume();
         if (pageContent != null && !showingControlPanel && !showingClickGui) {
             showHome();
         }
+        if (showingControlPanel) scheduleDiagnosticsRefresh();
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        publishScreenMetrics();
     }
 
     @Override
     protected void onPause() {
-        nativeOnPause();
+        activityResumed = false;
+        diagnosticsHandler.removeCallbacks(diagnosticsRefresh);
+        if (nativeRendererView != null) nativeRendererView.onHostPause();
+        nativeRuntime.onPause();
         super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        nativeShutdown();
+        diagnosticsHandler.removeCallbacks(diagnosticsRefresh);
+        if (nativeRendererView != null) {
+            nativeRendererView.shutdown();
+            nativeRendererView = null;
+        }
+        nativeRuntime.shutdown();
         super.onDestroy();
     }
 
     private void showHome() {
+        leaveCurrentPage();
         showingControlPanel = false;
         showingClickGui = false;
         beginScrollablePage();
@@ -138,43 +165,102 @@ public class MainActivity extends AppCompatActivity {
             launch.setOnClickListener(view -> launchMinecraft());
         }
 
-        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
-            TextView harness = actionButton("OPEN HOSTED OVERLAY HARNESS  /  DEBUG", true);
-            LinearLayout.LayoutParams harnessParams = new LinearLayout.LayoutParams(-1, dp(48));
-            harnessParams.topMargin = dp(10);
-            pageContent.addView(harness, harnessParams);
-            harness.setOnClickListener(view -> {
-                Intent intent = new Intent();
-                intent.setClassName(this, "com.eon.launcher.harness.HostedOverlayHarnessActivity");
-                startActivity(intent);
-            });
-        }
-
         addSpace(28);
         addLabel("LAUNCHER CORE");
         addBody("Native core is running in the Eon Launcher process.");
     }
 
     private void showControlPanel() {
+        leaveCurrentPage();
         showingControlPanel = true;
         showingClickGui = false;
         beginScrollablePage();
         pageContent.removeAllViews();
         addLabel("DIAGNOSTICS");
-        addTitle("Control panel");
-        addSpace(20);
-        addStatusRow("Native core", nativeGetStatus(), "READY", COLOR_ACCENT);
-        addStatusRow("Minecraft process", "No in-game connection", "NOT CONNECTED", COLOR_MUTED);
-        addStatusRow("Rendering API", "No authorized integration configured", "UNAVAILABLE", COLOR_MUTED);
-        addStatusRow("Input API", "No authorized integration configured", "UNAVAILABLE", COLOR_MUTED);
+        addTitle("Runtime status");
+        addRendererDiagnosticCard();
+        diagnosticsRows = new LinearLayout(this);
+        diagnosticsRows.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams rowsParams = new LinearLayout.LayoutParams(-1, -2);
+        rowsParams.topMargin = dp(10);
+        pageContent.addView(diagnosticsRows, rowsParams);
+        refreshDiagnostics();
+        if (activityResumed) scheduleDiagnosticsRefresh();
     }
 
     private void showClickGui() {
+        leaveCurrentPage();
         showingControlPanel = false;
         showingClickGui = true;
         pageContent = null;
         contentHost.removeAllViews();
-        contentHost.addView(new ClickGuiView(this), new FrameLayout.LayoutParams(-1, -1));
+        nativeRuntime.guiBridge().setVisible(true);
+        ClickGuiView clickGuiView = new ClickGuiView(this);
+        clickGuiView.setInteractionListener(nativeRuntime.guiBridge());
+        contentHost.addView(clickGuiView, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    private void leaveCurrentPage() {
+        diagnosticsHandler.removeCallbacks(diagnosticsRefresh);
+        if (showingClickGui && nativeRuntime != null) {
+            nativeRuntime.guiBridge().setVisible(false);
+        }
+        if (nativeRendererView != null) {
+            nativeRendererView.shutdown();
+            nativeRendererView = null;
+        }
+        diagnosticsRows = null;
+    }
+
+    private void addRendererDiagnosticCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        card.setBackground(background(COLOR_SURFACE, 8, 0));
+
+        FrameLayout surfaceFrame = new FrameLayout(this);
+        surfaceFrame.setBackgroundColor(Color.TRANSPARENT);
+        nativeRendererView = new NativeRendererView(this);
+        FrameLayout.LayoutParams surfaceParams = new FrameLayout.LayoutParams(dp(76), dp(76), Gravity.CENTER);
+        surfaceFrame.addView(nativeRendererView, surfaceParams);
+        card.addView(surfaceFrame, new LinearLayout.LayoutParams(dp(76), dp(76)));
+
+        LinearLayout description = new LinearLayout(this);
+        description.setOrientation(LinearLayout.VERTICAL);
+        description.setPadding(dp(12), 0, 0, 0);
+        TextView title = text("NATIVE GLES2 SURFACE", 11, COLOR_ACCENT);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        description.addView(title);
+        TextView detail = text("Transparent clear-only render target; no Minecraft surface attached.", 11, COLOR_MUTED);
+        LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(-1, -2);
+        detailParams.topMargin = dp(5);
+        description.addView(detail, detailParams);
+        card.addView(description, new LinearLayout.LayoutParams(0, -2, 1));
+
+        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(-1, -2);
+        cardParams.topMargin = dp(16);
+        pageContent.addView(card, cardParams);
+        if (activityResumed) nativeRendererView.onHostResume();
+    }
+
+    private void refreshDiagnostics() {
+        if (!showingControlPanel || diagnosticsRows == null || nativeRuntime == null) return;
+        RuntimeDiagnostics diagnostics = nativeRuntime.diagnostics();
+        diagnosticsRows.removeAllViews();
+        for (String line : diagnostics.rows()) {
+            addStatusRow(line);
+        }
+        if (activityResumed) scheduleDiagnosticsRefresh();
+    }
+
+    private void scheduleDiagnosticsRefresh() {
+        diagnosticsHandler.removeCallbacks(diagnosticsRefresh);
+        diagnosticsHandler.postDelayed(diagnosticsRefresh, 500L);
+    }
+
+    private void publishScreenMetrics() {
+        android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+        JNIBridge.updateScreenMetrics(metrics.widthPixels, metrics.heightPixels, metrics.density);
     }
 
     private void beginScrollablePage() {
@@ -197,20 +283,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void addStatusRow(String title, String detail, String state, int stateColor) {
+    private void addStatusRow(String value) {
         LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.VERTICAL);
-        row.setPadding(0, dp(14), 0, dp(14));
-        TextView heading = text(title, 15, COLOR_TEXT);
-        heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        row.addView(heading);
-        TextView description = text(detail, 12, COLOR_MUTED);
-        description.setPadding(0, dp(5), 0, 0);
-        row.addView(description);
-        TextView stateView = text(state, 10, stateColor);
-        stateView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        stateView.setPadding(0, dp(8), 0, 0);
-        row.addView(stateView);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(0, dp(8), 0, dp(8));
+        TextView label = text(value, 12, value.contains("DISCONNECTED") || value.contains(": NO")
+                ? COLOR_MUTED : COLOR_TEXT);
+        row.addView(label, new LinearLayout.LayoutParams(-1, -2));
         pageContent.addView(row, new LinearLayout.LayoutParams(-1, -2));
         View divider = new View(this);
         divider.setBackgroundColor(Color.rgb(39, 52, 48));
@@ -281,13 +360,4 @@ public class MainActivity extends AppCompatActivity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    public native boolean nativeInitialize();
-
-    public native void nativeOnResume();
-
-    public native void nativeOnPause();
-
-    public native void nativeShutdown();
-
-    public native String nativeGetStatus();
 }

@@ -30,48 +30,9 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
 
+    eon::runtime::sharedRuntime().setLibraryLoaded(true);
     pid_t pid = getpid();
     std::string processName = getProcessName();
     LOGI("eoncore loaded. pid=%d, process=%s", pid, processName.c_str());
     return JNI_VERSION_1_6;
-}
-
-extern "C" JNIEXPORT jboolean JNICALL
-Java_com_eon_launcher_MainActivity_nativeInitialize(JNIEnv*, jobject) {
-    const bool initialized = gRuntime.initialize();
-    const eon::runtime::RuntimeSnapshot snapshot = gRuntime.snapshot();
-    LOGI("runtime initialized=%d, state=%s, generation=%llu", initialized,
-         eon::runtime::lifecycleStateName(snapshot.state),
-         static_cast<unsigned long long>(snapshot.generation));
-    return initialized ? JNI_TRUE : JNI_FALSE;
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_eon_launcher_MainActivity_nativeOnResume(JNIEnv*, jobject) {
-    gRuntime.resume();
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_eon_launcher_MainActivity_nativeOnPause(JNIEnv*, jobject) {
-    gRuntime.pause();
-}
-
-extern "C" JNIEXPORT void JNICALL
-Java_com_eon_launcher_MainActivity_nativeShutdown(JNIEnv*, jobject) {
-    gRuntime.shutdown();
-    const eon::runtime::RuntimeSnapshot snapshot = gRuntime.snapshot();
-    LOGI("runtime shutdown, state=%s", eon::runtime::lifecycleStateName(snapshot.state));
-}
-
-extern "C" JNIEXPORT jstring JNICALL
-Java_com_eon_launcher_MainActivity_nativeGetStatus(JNIEnv* env, jobject /* this */) {
-    pid_t pid = getpid();
-    std::string processName = getProcessName();
-    const eon::runtime::RuntimeSnapshot snapshot = gRuntime.snapshot();
-    std::string message = "eoncore state=";
-    message += eon::runtime::lifecycleStateName(snapshot.state);
-    message += "; generation=" + std::to_string(snapshot.generation);
-    message += "; host=unbound; pid=" + std::to_string(pid) + "; process=" + processName;
-    LOGI("nativeGetStatus called. %s", message.c_str());
-    return env->NewStringUTF(message.c_str());
 }
