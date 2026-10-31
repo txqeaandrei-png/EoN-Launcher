@@ -122,6 +122,18 @@ public class MainActivity extends AppCompatActivity {
             launch.setOnClickListener(view -> launchMinecraft());
         }
 
+        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            TextView harness = actionButton("OPEN HOSTED OVERLAY HARNESS  /  DEBUG", true);
+            LinearLayout.LayoutParams harnessParams = new LinearLayout.LayoutParams(-1, dp(48));
+            harnessParams.topMargin = dp(10);
+            pageContent.addView(harness, harnessParams);
+            harness.setOnClickListener(view -> {
+                Intent intent = new Intent();
+                intent.setClassName(this, "com.eon.launcher.harness.HostedOverlayHarnessActivity");
+                startActivity(intent);
+            });
+        }
+
         addSpace(28);
         addLabel("LAUNCHER CORE");
         addBody("Native core is running in the Eon Launcher process.");
