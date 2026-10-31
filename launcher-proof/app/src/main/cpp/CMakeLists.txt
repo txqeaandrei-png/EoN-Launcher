@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project("proofnative")
+project("eoncore")
 
 add_library(
-    proofnative
+    eoncore
     SHARED
     native-lib.cpp
 )
@@ -14,7 +14,7 @@ find_library(
 )
 
 target_link_libraries(
-    proofnative
+    eoncore
     PRIVATE
     ${log-lib}
 )
