@@ -36,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!nativeInitialize()) {
+            throw new IllegalStateException("Eon native runtime failed to initialize");
+        }
         getWindow().setStatusBarColor(COLOR_BACKGROUND);
         getWindow().setNavigationBarColor(COLOR_BACKGROUND);
         getWindow().getDecorView().setSystemUiVisibility(0);
@@ -81,9 +84,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        nativeOnResume();
         if (pageContent != null && !showingControlPanel && !showingClickGui) {
             showHome();
         }
+    }
+
+    @Override
+    protected void onPause() {
+        nativeOnPause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        nativeShutdown();
+        super.onDestroy();
     }
 
     private void showHome() {
@@ -264,6 +280,14 @@ public class MainActivity extends AppCompatActivity {
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
+
+    public native boolean nativeInitialize();
+
+    public native void nativeOnResume();
+
+    public native void nativeOnPause();
+
+    public native void nativeShutdown();
 
     public native String nativeGetStatus();
 }
