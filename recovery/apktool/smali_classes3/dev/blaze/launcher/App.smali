@@ -1149,9 +1149,139 @@
     goto :goto_0
 .end method
 
+.method private final copyMinecraftNativeLibraries()V
+    .locals 10
+
+    :try_start_copy
+    invoke-virtual {p0}, Landroid/content/ContextWrapper;->getFilesDir()Ljava/io/File;
+    move-result-object v0
+
+    new-instance v1, Ljava/io/File;
+    const-string v2, "native/arm64-v8a"
+    invoke-direct {v1, v0, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    move-object v0, v1
+
+    invoke-virtual {v0}, Ljava/io/File;->exists()Z
+    move-result v1
+    if-eqz v1, :make_destination
+    goto :destination_ready
+
+    :make_destination
+    invoke-virtual {v0}, Ljava/io/File;->mkdirs()Z
+
+    :destination_ready
+    const-string v1, "com.mojang.minecraftpe"
+    const/4 v2, 0x2
+    invoke-virtual {p0, v1, v2}, Landroid/content/ContextWrapper;->createPackageContext(Ljava/lang/String;I)Landroid/content/Context;
+    move-result-object v1
+    invoke-virtual {v1}, Landroid/content/Context;->getApplicationInfo()Landroid/content/pm/ApplicationInfo;
+    move-result-object v1
+    iget-object v1, v1, Landroid/content/pm/ApplicationInfo;->nativeLibraryDir:Ljava/lang/String;
+
+    new-instance v2, Ljava/io/File;
+    invoke-direct {v2, v1}, Ljava/io/File;-><init>(Ljava/lang/String;)V
+    invoke-virtual {v2}, Ljava/io/File;->listFiles()[Ljava/io/File;
+    move-result-object v1
+
+    if-eqz v1, :copy_complete
+    const/4 v2, 0x0
+
+    :copy_loop
+    array-length v3, v1
+    if-lt v2, v3, :copy_one
+    goto :copy_complete
+
+    :copy_one
+    aget-object v3, v1, v2
+    invoke-virtual {v3}, Ljava/io/File;->getName()Ljava/lang/String;
+    move-result-object v4
+    const-string v5, ".so"
+    invoke-virtual {v4, v5}, Ljava/lang/String;->endsWith(Ljava/lang/String;)Z
+    move-result v5
+    if-nez v5, :copy_next
+
+    new-instance v5, Ljava/io/File;
+    invoke-direct {v5, v0, v4}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    new-instance v4, Ljava/io/FileInputStream;
+    invoke-direct {v4, v3}, Ljava/io/FileInputStream;-><init>(Ljava/io/File;)V
+    new-instance v3, Ljava/io/FileOutputStream;
+    invoke-direct {v3, v5}, Ljava/io/FileOutputStream;-><init>(Ljava/io/File;)V
+    const/16 v6, 8192
+    new-array v6, v6, [B
+
+    :stream_loop
+    invoke-virtual {v4, v6}, Ljava/io/FileInputStream;->read([B)I
+    move-result v7
+    if-gtz v7, :stream_copy
+    invoke-virtual {v4}, Ljava/io/FileInputStream;->close()V
+    invoke-virtual {v3}, Ljava/io/FileOutputStream;->close()V
+    const/4 v4, 0x1
+    invoke-virtual {v5, v4, v4}, Ljava/io/File;->setReadable(ZZ)Z
+    invoke-virtual {v5, v4, v4}, Ljava/io/File;->setWritable(ZZ)Z
+    invoke-virtual {v5, v4, v4}, Ljava/io/File;->setExecutable(ZZ)Z
+    goto :copy_next
+
+    :stream_copy
+    const/4 v8, 0x0
+    invoke-virtual {v3, v6, v8, v7}, Ljava/io/FileOutputStream;->write([BII)V
+    goto :stream_loop
+
+    :copy_next
+    add-int/lit8 v2, v2, 0x1
+    goto :copy_loop
+
+    :copy_complete
+    new-instance v1, Ljava/io/File;
+    const-string v2, "libPlayFabMultiplayer.so"
+    invoke-direct {v1, v0, v2}, Ljava/io/File;-><init>(Ljava/io/File;Ljava/lang/String;)V
+    invoke-virtual {v1}, Ljava/io/File;->exists()Z
+    move-result v2
+    if-nez v2, :preload_playfab
+    const-string v2, "BlazeLauncherStartup"
+    const-string v3, "STAGE preload libPlayFabMultiplayer.so MISSING from copied directory"
+    invoke-static {v2, v3}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;)I
+    goto :copy_success
+
+    :preload_playfab
+    invoke-virtual {v1}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
+    move-result-object v2
+    const-string v3, "BlazeLauncherStartup"
+    new-instance v4, Ljava/lang/StringBuilder;
+    invoke-direct {v4}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v5, "STAGE preload libPlayFabMultiplayer.so ENTER size="
+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v4
+    invoke-virtual {v1}, Ljava/io/File;->length()J
+    move-result-wide v5
+    invoke-virtual {v4, v5, v6}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    move-result-object v4
+    invoke-virtual {v4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v4
+    invoke-static {v3, v4}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    invoke-static {v2}, Ljava/lang/System;->load(Ljava/lang/String;)V
+    const-string v2, "STAGE preload libPlayFabMultiplayer.so COMPLETE"
+    invoke-static {v3, v2}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+
+    :copy_success
+    const-string v2, "BlazeLauncherStartup"
+    const-string v3, "STAGE Minecraft native libraries copied before inherited startup"
+    invoke-static {v2, v3}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    return-void
+    :try_end_copy
+    .catchall {:try_start_copy .. :catch_copy} :catch_copy
+
+    :catch_copy
+    move-exception v0
+    const-string v1, "BlazeLauncherStartup"
+    const-string v2, "STAGE Minecraft native library copy FAILED"
+    invoke-static {v1, v2, v0}, Landroid/util/Log;->e(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)I
+    return-void
+.end method
+
 .method private final patchNativeLibraryDirCompatibility()V
     .locals 5
 
+    invoke-direct {p0}, Ldev/blaze/launcher/App;->copyMinecraftNativeLibraries()V
     invoke-direct {p0}, Ldev/blaze/launcher/App;->patchNativeLibraryDir()V
 
     :try_start_0
@@ -1705,8 +1835,6 @@
 
     invoke-static {v3}, Landroidx/window/embedding/۟ۧۧۢۥ;->۟ۢۤۥ۠(Ljava/lang/Object;)V
 
-    invoke-static {v2}, Ldev/blaze/launcher/App;->۟۠ۧۨ۠(Ljava/lang/Object;)V
-
     invoke-static {v2}, Ldev/blaze/launcher/App;->ۢۤۢۥ(Ljava/lang/Object;)V
 
     return-void
@@ -1735,6 +1863,7 @@
     invoke-super {v1}, Landroid/app/Application;->onCreate()V
 
     move-object v0, v1
+    invoke-direct {v1}, Ldev/blaze/launcher/App;->patchNativeLibraryDirCompatibility()V
 
     check-cast v0, Landroid/app/Application;
 

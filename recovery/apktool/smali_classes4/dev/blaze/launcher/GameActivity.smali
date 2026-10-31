@@ -394,11 +394,21 @@
 
     const-string v0, "STAGE GameActivity.onCreate ENTER"
     invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
+    const-string v0, "Blaze diagnostic: entering inherited Minecraft startup"
+    const/4 v1, 0x1
+    invoke-static {p0, v0, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+    move-result-object v0
+    invoke-virtual {v0}, Landroid/widget/Toast;->show()V
 
     :try_start_0
     invoke-super {p0, p1}, Ldev/blaze/launcher/AdActivity;->onCreate(Landroid/os/Bundle;)V
     const-string v0, "STAGE inherited MainActivity/GameActivity super.onCreate COMPLETE"
     invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
+    const-string v0, "Blaze diagnostic: inherited Minecraft startup complete"
+    const/4 v1, 0x1
+    invoke-static {p0, v0, v1}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+    move-result-object v0
+    invoke-virtual {v0}, Landroid/widget/Toast;->show()V
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catch_super
 
@@ -478,10 +488,37 @@
 .end method
 
 .method public onResume()V
-    .locals 0
+    .locals 1
 
     .line 49
     invoke-super {p0}, Ldev/blaze/launcher/AdActivity;->onResume()V
+    const-string v0, "STAGE GameActivity.onResume COMPLETE"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
 
     return-void
+.end method
+
+.method protected onPause()V
+    .locals 1
+
+    invoke-super {p0}, Ldev/blaze/launcher/AdActivity;->onPause()V
+    const-string v0, "STAGE GameActivity.onPause ENTER"
+    invoke-direct {p0, v0}, Ldev/blaze/launcher/GameActivity;->logStartupStage(Ljava/lang/String;)V
+    return-void
+.end method
+
+.method public onWindowFocusChanged(Z)V
+    .locals 3
+
+    invoke-super {p0, p1}, Landroid/app/Activity;->onWindowFocusChanged(Z)V
+    const-string v0, "BlazeLauncherStartup"
+    if-eqz p1, :window_not_focused
+    const-string v1, "STAGE GameActivity window has focus"
+    :goto_window_log
+    invoke-static {v0, v1}, Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I
+    return-void
+
+    :window_not_focused
+    const-string v1, "STAGE GameActivity window lost focus"
+    goto :goto_window_log
 .end method
