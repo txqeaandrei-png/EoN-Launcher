@@ -240,7 +240,6 @@ public final class ClickGuiView extends LinearLayout {
 
     private void addSettingControl(LinearLayout container, ModuleDefinition module) {
         TextView label = text(module.getSettingLabel(), 11, COLOR_MUTED);
-        container.addView(label);
         if (module.getSettingType() == ModuleDefinition.SettingType.RANGE) {
             int initialValue = configStore.getRange(module);
             TextView value = text(String.valueOf(initialValue), 11, COLOR_TEXT);
@@ -277,6 +276,7 @@ public final class ClickGuiView extends LinearLayout {
             });
             container.addView(seekBar, new LayoutParams(-1, dp(34)));
         } else {
+            container.addView(label);
             TextView choice = text(configStore.getChoice(module), 12, COLOR_TEXT);
             choice.setGravity(Gravity.CENTER_VERTICAL);
             choice.setPadding(dp(10), 0, dp(10), 0);
